@@ -1,3 +1,5 @@
 /SimpleHttpServer.v12.suo
 /SimpleHttpServer.userprefs
 *.csproj.user
+/bin/
+/obj/
