@@ -11,9 +11,11 @@ using System.Threading;
 // simple HTTP explanation
 // http://www.jmarshall.com/easy/http/
 
-namespace Bend.Util {
+namespace Bend.Util 
+{
 
-    public class HttpProcessor {
+    public class HttpProcessor 
+    {
         public TcpClient socket;        
         public HttpServer srv;
 
@@ -28,19 +30,32 @@ namespace Bend.Util {
 
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
 
-        public HttpProcessor(TcpClient s, HttpServer srv) {
+        public HttpProcessor(TcpClient s, HttpServer srv) 
+        {
             this.socket = s;
             this.srv = srv;                   
         }
         
-        private string streamReadLine(Stream inputStream) {
+        private string streamReadLine(Stream inputStream) 
+        {
             int next_char;
             string data = "";
-            while (true) {
+            while (true) 
+            {
                 next_char = inputStream.ReadByte();
-                if (next_char == '\n') { break; }
-                if (next_char == '\r') { continue; }
-                if (next_char == -1) { Thread.Sleep(1); continue; };
+                if (next_char == '\n')
+                {
+                    break;
+                }
+                if (next_char == '\r')
+                { 
+                    continue; 
+                }
+                if (next_char == -1) 
+                { 
+                    Thread.Sleep(1); 
+                    continue; 
+                };
                 data += Convert.ToChar(next_char);
             }            
             return data;
@@ -53,15 +68,21 @@ namespace Bend.Util {
 
             // we probably shouldn't be using a streamwriter for all output from handlers either
             outputStream = new StreamWriter(new BufferedStream(socket.GetStream()));
-            try {
+            try 
+            {
                 parseRequest();
                 readHeaders();
-                if (http_method.Equals("GET")) {
+                if (http_method.Equals("GET"))
+                {
                     handleGETRequest();
-                } else if (http_method.Equals("POST")) {
+                }
+                else if (http_method.Equals("POST")) 
+                {
                     handlePOSTRequest();
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 Console.WriteLine("Exception: " + e.ToString());
                 writeFailure();
             }
@@ -71,10 +92,12 @@ namespace Bend.Util {
             socket.Close();             
         }
 
-        public void parseRequest() {
+        public void parseRequest()
+        {
             String request = streamReadLine(inputStream);
             string[] tokens = request.Split(' ');
-            if (tokens.Length != 3) {
+            if (tokens.Length != 3) 
+            {
                 throw new Exception("invalid http request line");
             }
             http_method = tokens[0].ToUpper();
@@ -84,22 +107,27 @@ namespace Bend.Util {
             Console.WriteLine("starting: " + request);
         }
 
-        public void readHeaders() {
+        public void readHeaders()
+        {
             Console.WriteLine("readHeaders()");
             String line;
-            while ((line = streamReadLine(inputStream)) != null) {
-                if (line.Equals("")) {
+            while ((line = streamReadLine(inputStream)) != null)
+            {
+                if (line.Equals(""))
+                {
                     Console.WriteLine("got headers");
                     return;
                 }
                 
                 int separator = line.IndexOf(':');
-                if (separator == -1) {
+                if (separator == -1)
+                {
                     throw new Exception("invalid http header line: " + line);
                 }
                 String name = line.Substring(0, separator);
                 int pos = separator + 1;
-                while ((pos < line.Length) && (line[pos] == ' ')) {
+                while ((pos < line.Length) && (line[pos] == ' '))
+                {
                     pos++; // strip any spaces
                 }
                     
@@ -109,12 +137,14 @@ namespace Bend.Util {
             }
         }
 
-        public void handleGETRequest() {
+        public void handleGETRequest()
+        {
             srv.handleGETRequest(this);
         }
 
         private const int BUF_SIZE = 4096;
-        public void handlePOSTRequest() {
+        public void handlePOSTRequest()
+        {
             // this post data processing just reads everything into a memory stream.
             // this is fine for smallish things, but for large stuff we should really
             // hand an input stream to the request processor. However, the input stream 
@@ -124,24 +154,31 @@ namespace Bend.Util {
             Console.WriteLine("get post data start");
             int content_len = 0;
             MemoryStream ms = new MemoryStream();
-            if (this.httpHeaders.ContainsKey("Content-Length")) {
+            if (this.httpHeaders.ContainsKey("Content-Length"))
+            {
                  content_len = Convert.ToInt32(this.httpHeaders["Content-Length"]);
-                 if (content_len > MAX_POST_SIZE) {
+                 if (content_len > MAX_POST_SIZE)
+                 {
                      throw new Exception(
                          String.Format("POST Content-Length({0}) too big for this simple server",
                            content_len));
                  }
                  byte[] buf = new byte[BUF_SIZE];              
                  int to_read = content_len;
-                 while (to_read > 0) {  
+                 while (to_read > 0)
+                 {
                      Console.WriteLine("starting Read, to_read={0}",to_read);
 
                      int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
                      Console.WriteLine("read finished, numread={0}", numread);
-                     if (numread == 0) {
-                         if (to_read == 0) {
+                     if (numread == 0)
+                     {
+                         if (to_read == 0)
+                         {
                              break;
-                         } else {
+                         }
+                         else
+                         {
                              throw new Exception("client disconnected during post");
                          }
                      }
@@ -152,25 +189,26 @@ namespace Bend.Util {
             }
             Console.WriteLine("get post data end");
             srv.handlePOSTRequest(this, new StreamReader(ms));
-
         }
 
-        public void writeSuccess(string content_type="text/html") {
+        public void writeSuccess(string content_type="text/html")
+        {
             outputStream.WriteLine("HTTP/1.0 200 OK");            
             outputStream.WriteLine("Content-Type: " + content_type);
             outputStream.WriteLine("Connection: close");
             outputStream.WriteLine("");
         }
 
-        public void writeFailure() {
+        public void writeFailure()
+        {
             outputStream.WriteLine("HTTP/1.0 404 File not found");
             outputStream.WriteLine("Connection: close");
             outputStream.WriteLine("");
         }
     }
 
-    public abstract class HttpServer {
-
+    public abstract class HttpServer
+    {
         protected int port;
         TcpListener listener;
         bool is_active = true;
@@ -188,16 +226,19 @@ namespace Bend.Util {
             }
         }
 
-        public HttpServer(int port) {
+        public HttpServer(int port)
+        {
             this.port = port;
         }
 
-        public void listen() {
+        public void listen()
+        {
             byte[] ipParts = { 127, 0, 0, 1 };
             IPAddress local = new IPAddress(ipParts);
             listener = new TcpListener(local, port);
             listener.Start();
-            while (is_active) {                
+            while (is_active)
+            {
                 TcpClient s = listener.AcceptTcpClient();
                 HttpProcessor processor = new HttpProcessor(s, this);
                 Thread thread = new Thread(new ThreadStart(processor.process));
@@ -237,6 +278,7 @@ namespace Bend.Util {
             }
             else
             {
+                // send test page
                 p.outputStream.WriteLine("<html><body><h1>test server</h1>");
                 p.outputStream.WriteLine("Current Time: " + DateTime.Now.ToString());
                 p.outputStream.WriteLine("url : {0}", p.http_url);
@@ -248,7 +290,8 @@ namespace Bend.Util {
             }
         }
 
-        public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData) {
+        public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData)
+        {
             Console.WriteLine("POST request: {0}", p.http_url);
             string data = inputData.ReadToEnd();
 
@@ -256,8 +299,6 @@ namespace Bend.Util {
             p.outputStream.WriteLine("<html><body><h1>test server</h1>");
             p.outputStream.WriteLine("<a href=/test>return</a><p>");
             p.outputStream.WriteLine("postbody: <pre>{0}</pre>", data);
-            
-
         }
 
         private String getPage(String pageName)
@@ -297,7 +338,6 @@ namespace Bend.Util {
             thread.Start();
             return 0;
         }
-
     }
 
 }
