@@ -309,11 +309,8 @@ namespace Bend.Util
             {
                 if(file.Contains(pageName))
                 {
-                    using(StreamReader reader = new StreamReader(file))
-                    {
-                        while(!reader.EndOfStream)
-                            page += reader.ReadLine();
-                    }
+                    StreamReader reader = new StreamReader(file);
+                    page = reader.ReadToEnd();
                 }
             }
             return page;
