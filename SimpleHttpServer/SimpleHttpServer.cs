@@ -303,6 +303,8 @@ namespace Bend.Util
 
         private String getPage(String pageName)
         {
+            if (pageName == "")
+                return "";
             String[] files = Directory.GetFiles(m_httpRoot);
             String page = "";
             foreach(String file in files)
