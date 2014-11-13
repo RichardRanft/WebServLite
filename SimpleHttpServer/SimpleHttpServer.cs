@@ -174,7 +174,20 @@ namespace Bend.Util {
         protected int port;
         TcpListener listener;
         bool is_active = true;
-       
+        protected String m_httpRoot;
+
+        public String HTTPRoot
+        {
+            get
+            {
+                return m_httpRoot;
+            }
+            set
+            {
+                m_httpRoot = value;
+            }
+        }
+
         public HttpServer(int port) {
             this.port = port;
         }
@@ -197,10 +210,12 @@ namespace Bend.Util {
         public abstract void handlePOSTRequest(HttpProcessor p, StreamReader inputData);
     }
 
-    public class MyHttpServer : HttpServer {
-        public MyHttpServer(int port)
-            : base(port) {
+    public class MyHttpServer : HttpServer
+    {
+        public MyHttpServer(int port) : base(port)
+        {
         }
+
         public override void handleGETRequest (HttpProcessor p)
 		{
 
@@ -214,14 +229,23 @@ namespace Bend.Util {
 
             Console.WriteLine("request: {0}", p.http_url);
             p.writeSuccess();
-            p.outputStream.WriteLine("<html><body><h1>test server</h1>");
-            p.outputStream.WriteLine("Current Time: " + DateTime.Now.ToString());
-            p.outputStream.WriteLine("url : {0}", p.http_url);
+            
+            String page = getPage(p.http_url);
+            if (page != "")
+            {
+                p.outputStream.Write(page);
+            }
+            else
+            {
+                p.outputStream.WriteLine("<html><body><h1>test server</h1>");
+                p.outputStream.WriteLine("Current Time: " + DateTime.Now.ToString());
+                p.outputStream.WriteLine("url : {0}", p.http_url);
 
-            p.outputStream.WriteLine("<form method=post action=/form>");
-            p.outputStream.WriteLine("<input type=text name=foo value=foovalue>");
-            p.outputStream.WriteLine("<input type=submit name=bar value=barvalue>");
-            p.outputStream.WriteLine("</form>");
+                p.outputStream.WriteLine("<form method=post action=/form>");
+                p.outputStream.WriteLine("<input type=text name=foo value=foovalue>");
+                p.outputStream.WriteLine("<input type=submit name=bar value=barvalue>");
+                p.outputStream.WriteLine("</form>");
+            }
         }
 
         public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData) {
@@ -235,16 +259,40 @@ namespace Bend.Util {
             
 
         }
+
+        private String getPage(String pageName)
+        {
+            String[] files = Directory.GetFiles(m_httpRoot);
+            String page = "";
+            foreach(String file in files)
+            {
+                if(file.Contains(pageName))
+                {
+                    using(StreamReader reader = new StreamReader(file))
+                    {
+                        while(!reader.EndOfStream)
+                            page += reader.ReadLine();
+                    }
+                }
+            }
+            return page;
+        }
     }
 
-    public class TestMain {
-        public static int Main(String[] args) {
+    public class TestMain
+    {
+        public static int Main(String[] args)
+        {
             HttpServer httpServer;
-            if (args.GetLength(0) > 0) {
+            if (args.GetLength(0) > 0)
+            {
                 httpServer = new MyHttpServer(Convert.ToInt16(args[0]));
-            } else {
+            }
+            else
+            {
                 httpServer = new MyHttpServer(8080);
             }
+            httpServer.HTTPRoot = "../../";
             Thread thread = new Thread(new ThreadStart(httpServer.listen));
             thread.Start();
             return 0;
