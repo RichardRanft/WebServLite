@@ -21,10 +21,28 @@ namespace Bend.Util
 
         public override void handleGETRequest(HttpProcessor p)
         {
-            String url = p.http_url.ToLower();
+            String url = cleanURL(p.http_url.ToLower());
+
+            String msg = DateTime.Now.ToString() + " : GET request: " + url;
+            Console.WriteLine(msg);
+            m_log.WriteLine(msg);
+
             if (url.Contains(".png"))
             {
-                Stream fs = File.Open(HTTPRoot + url, FileMode.Open);
+
+                Stream fs = null;
+                try
+                {
+                    fs = File.Open(HTTPRoot + url, FileMode.Open);
+                }
+                catch(Exception ex)
+                {
+                    msg = DateTime.Now.ToString() + " : request failed: " + url + " : " + ex.Message;
+                    Console.WriteLine(msg);
+                    m_log.WriteLine(msg);
+                    p.writeFailure();
+                    return;
+                }
 
                 p.writeSuccess("image/png");
                 fs.CopyTo(p.outputStream.BaseStream);
@@ -34,7 +52,19 @@ namespace Bend.Util
 
             if (url.Contains(".jpg"))
             {
-                Stream fs = File.Open(HTTPRoot + url, FileMode.Open);
+                Stream fs = null;
+                try
+                {
+                    fs = File.Open(HTTPRoot + url, FileMode.Open);
+                }
+                catch (Exception ex)
+                {
+                    msg = DateTime.Now.ToString() + " : request failed: " + url + " : " + ex.Message;
+                    Console.WriteLine(msg);
+                    m_log.WriteLine(msg);
+                    p.writeFailure();
+                    return;
+                }
 
                 p.writeSuccess("image/jpg");
                 fs.CopyTo(p.outputStream.BaseStream);
@@ -44,15 +74,26 @@ namespace Bend.Util
 
             if (url.Contains(".pdb") || url.Contains(".exe") || url.Contains(".dll"))
             {
-                Stream fs = File.Open(HTTPRoot + url, FileMode.Open);
+                Stream fs = null;
+                try
+                {
+                    fs = File.Open(HTTPRoot + url, FileMode.Open);
+                }
+                catch (Exception ex)
+                {
+                    msg = DateTime.Now.ToString() + " : request failed: " + url + " : " + ex.Message;
+                    Console.WriteLine(msg);
+                    m_log.WriteLine(msg);
+                    p.writeFailure();
+                    return;
+                }
 
                 p.writeSuccess("application/octet-stream");
                 fs.CopyTo(p.outputStream.BaseStream);
                 p.outputStream.BaseStream.Flush();
                 fs.Close();
+                return;
             }
-
-            Console.WriteLine("request: {0}", url);
 
             String page = getPage(url);
             if (page != "")
@@ -63,19 +104,41 @@ namespace Bend.Util
             else
             {
                 // send test page
+                msg = DateTime.Now.ToString() + " : request failed: " + url + " : Page not found.";
+                Console.WriteLine(msg);
+                m_log.WriteLine(msg);
                 p.writeFailure();
             }
         }
 
         public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData)
         {
-            Console.WriteLine("POST request: {0}", p.http_url);
+            String msg = DateTime.Now.ToString() + " : POST request: " + p.http_url;
+            Console.WriteLine(msg);
+            m_log.WriteLine(msg);
             string data = inputData.ReadToEnd();
 
             p.writeSuccess();
             p.outputStream.WriteLine("<html><body><h1>test server</h1>");
             p.outputStream.WriteLine("<a href=/test>return</a><p>");
             p.outputStream.WriteLine("postbody: <pre>{0}</pre>", data);
+        }
+
+        private String cleanURL(String urlString)
+        {
+            String clean = "";
+            urlString = urlString.Replace("//", "/");
+            String[] parts = urlString.Split('/');
+            if(parts[2].Contains(parts[1]))
+            {
+                parts[1] = "";
+            }
+            foreach(String part in parts)
+            {
+                clean += "/" + part;
+            }
+
+            return clean;
         }
 
         private String getPage(String pageName)

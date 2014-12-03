@@ -20,8 +20,21 @@ namespace Bend.Util
         public String http_protocol_versionstring;
         public Hashtable httpHeaders = new Hashtable();
 
+        protected CLog m_log;
 
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
+
+        public CLog Log
+        {
+            get
+            {
+                return m_log;
+            }
+            set
+            {
+                m_log = value;
+            }
+        }
 
         public HttpProcessor(TcpClient s, HttpServer srv)
         {
@@ -77,7 +90,9 @@ namespace Bend.Util
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception: " + e.ToString());
+                String msg = DateTime.Now.ToString() + " : Exception: " + e.Message;
+                Console.WriteLine(msg);
+                m_log.WriteLine(msg);
                 writeFailure();
             }
             outputStream.Flush();
@@ -98,18 +113,24 @@ namespace Bend.Util
             http_url = tokens[1];
             http_protocol_versionstring = tokens[2];
 
-            Console.WriteLine("{0} : starting: {1}", DateTime.Now.ToString(), request);
+            String msg = DateTime.Now.ToString() + " : starting: " + request;
+            Console.WriteLine(msg);
+            m_log.WriteLine(msg);
         }
 
         public void readHeaders()
         {
-            Console.WriteLine("{0} : readHeaders()", DateTime.Now.ToString());
+            String msg = DateTime.Now.ToString() + " : readHeaders()";
+            Console.WriteLine(msg);
+            m_log.WriteLine(msg);
             String line;
             while ((line = streamReadLine(inputStream)) != null)
             {
                 if (line.Equals(""))
                 {
-                    Console.WriteLine("got headers");
+                    msg = DateTime.Now.ToString() + " : got headers";
+                    Console.WriteLine(msg);
+                    m_log.WriteLine(msg);
                     return;
                 }
 
@@ -126,7 +147,9 @@ namespace Bend.Util
                 }
 
                 string value = line.Substring(pos, line.Length - pos);
-                Console.WriteLine("{0} : header: {1}:{2}", DateTime.Now.ToString(), name, value);
+                msg = DateTime.Now.ToString() + " : header: " + name + ":" + value;
+                Console.WriteLine(msg);
+                m_log.WriteLine(msg);
                 httpHeaders[name] = value;
             }
         }
@@ -145,7 +168,9 @@ namespace Bend.Util
             // we hand him needs to let him see the "end of the stream" at this content 
             // length, because otherwise he won't know when he's seen it all! 
 
-            Console.WriteLine("get post data start");
+            String msg = DateTime.Now.ToString() + " : get post data start";
+            Console.WriteLine(msg);
+            m_log.WriteLine(msg);
             int content_len = 0;
             MemoryStream ms = new MemoryStream();
             if (this.httpHeaders.ContainsKey("Content-Length"))
@@ -161,10 +186,14 @@ namespace Bend.Util
                 int to_read = content_len;
                 while (to_read > 0)
                 {
-                    Console.WriteLine("starting Read, to_read={0}", to_read);
+                    msg = DateTime.Now.ToString() + " : starting Read, to_read=" + to_read;
+                    Console.WriteLine(msg);
+                    m_log.WriteLine(msg);
 
                     int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
-                    Console.WriteLine("read finished, numread={0}", numread);
+                    msg = DateTime.Now.ToString() + " : read finished, numread=" + numread;
+                    Console.WriteLine(msg);
+                    m_log.WriteLine(msg);
                     if (numread == 0)
                     {
                         if (to_read == 0)
@@ -181,7 +210,9 @@ namespace Bend.Util
                 }
                 ms.Seek(0, SeekOrigin.Begin);
             }
-            Console.WriteLine("get post data end");
+            msg = DateTime.Now.ToString() + " : get post data end";
+            Console.WriteLine(msg);
+            m_log.WriteLine(msg);
             srv.handlePOSTRequest(this, new StreamReader(ms));
         }
 

@@ -41,6 +41,7 @@ namespace Bend.Util
             httpServer.HTTPRoot = @".";
             Thread thread = new Thread(new ThreadStart(httpServer.listen));
             thread.Start();
+            Console.WriteLine("HTTPServer running on address {0}:{1}", httpServer.Address, httpServer.Port);
             return 0;
         }
 
