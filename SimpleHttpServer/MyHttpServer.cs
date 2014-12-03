@@ -129,6 +129,10 @@ namespace Bend.Util
             String clean = "";
             urlString = urlString.Replace("//", "/");
             String[] parts = urlString.Split('/');
+            
+            if (parts.Length < 3)
+                return urlString;
+
             if(parts[2].Contains(parts[1]))
             {
                 parts[1] = "";
