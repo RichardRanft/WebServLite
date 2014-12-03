@@ -41,6 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HttpProcessor.cs" />
+    <Compile Include="HttpServer.cs" />
+    <Compile Include="MyHttpServer.cs" />
     <Compile Include="SimpleHttpServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
