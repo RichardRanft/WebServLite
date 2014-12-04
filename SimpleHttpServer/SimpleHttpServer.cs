@@ -11,7 +11,7 @@ using System.Threading;
 // simple HTTP explanation
 // http://www.jmarshall.com/easy/http/
 
-namespace Bend.Util 
+namespace SimpleHttpServer 
 {
     public class TestMain
     {

@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace Bend.Util
+namespace SimpleHttpServer
 {
     public class MyHttpServer : HttpServer
     {
