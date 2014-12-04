@@ -124,14 +124,30 @@ namespace SimpleHttpServer
             Console.WriteLine(msg);
             m_log.WriteLine(msg);
             String line;
+            bool foundBoundary = false;
+            String boundary = "";
             while ((line = streamReadLine(inputStream)) != null)
             {
-                if (line.Equals(""))
+                if (line.Length > 0 && line.ToString().Contains(boundary.ToString()) )
+                {
+                    foundBoundary = true;
+                }
+
+                if (line.Equals("") && foundBoundary)
                 {
                     msg = DateTime.Now.ToString() + " : got headers";
                     Console.WriteLine(msg);
                     m_log.WriteLine(msg);
                     return;
+                }
+
+                if (line.Equals(""))
+                    continue;
+
+                if (line.Contains("boundary"))
+                {
+                    String[] parts = line.Split('=');
+                    boundary = parts[parts.Length - 1].Replace("-", "");
                 }
 
                 int separator = line.IndexOf(':');

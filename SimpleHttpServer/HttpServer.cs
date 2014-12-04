@@ -49,6 +49,11 @@ namespace SimpleHttpServer
             m_log = new CLog();
             m_log.Filename = "server.log";
             this.m_port = port;
+            if (m_address == null)
+            {
+                byte[] ipParts = { 127, 0, 0, 1 };
+                m_address = new IPAddress(ipParts);
+            }
         }
 
         public HttpServer(byte[] address, int port)

@@ -116,12 +116,53 @@ namespace SimpleHttpServer
             String msg = DateTime.Now.ToString() + " : POST request: " + p.http_url;
             Console.WriteLine(msg);
             m_log.WriteLine(msg);
-            string data = inputData.ReadToEnd();
 
-            p.writeSuccess();
-            p.outputStream.WriteLine("<html><body><h1>test server</h1>");
-            p.outputStream.WriteLine("<a href=/test>return</a><p>");
-            p.outputStream.WriteLine("postbody: <pre>{0}</pre>", data);
+            // handle a few specific POST types
+            if (p.httpHeaders["Content-Type"].ToString() == "multipart/form-data")
+            {
+                String line1 = inputData.ReadLine();
+                line1 = line1.Replace("-", "");
+                String terminalMarker = "\n-----------------------" + line1 + "--";
+                String line2 = inputData.ReadLine();
+                String line3 = inputData.ReadLine();
+                String line4 = inputData.ReadLine();
+                string data = inputData.ReadToEnd();
+                data = data.Replace(terminalMarker, "");
+
+                String[] parts = line2.Split(';');
+                String[] filenameAttrib = parts[parts.Length - 1].Split('=');
+                String filename = filenameAttrib[1].Replace("\"", "");
+                using (StreamWriter writer = new StreamWriter("." + p.http_url + "/" + filename))
+                {
+                    writer.Write(data);
+                }
+
+                p.writeSuccess();
+                p.outputStream.WriteLine("<html><body><h1>test server</h1>");
+                p.outputStream.WriteLine("<a href=/test>return</a><p>");
+                p.outputStream.WriteLine("postbody: <pre>{0}</pre>", filename);
+            }
+            else if (p.httpHeaders["Content-Type"].ToString() == "application/x-www-form-urlencoded")
+            {
+                string data = inputData.ReadToEnd();
+                String[] attribs = data.Split('&');
+
+                p.writeSuccess();
+                p.outputStream.WriteLine("<html><body><h1>test server</h1>");
+                p.outputStream.WriteLine("postbody: <pre>");
+                foreach(String part in attribs)
+                    p.outputStream.WriteLine("<p>{0}</p>", part);
+                p.outputStream.WriteLine("</pre>");
+            }
+            else
+            {
+                string data = inputData.ReadToEnd();
+
+                p.writeSuccess();
+                p.outputStream.WriteLine("<html><body><h1>test server</h1>");
+                p.outputStream.WriteLine("<a href=/test>return</a><p>");
+                p.outputStream.WriteLine("postbody: <pre>{0}</pre>", data);
+            }
         }
 
         private String cleanURL(String urlString)
@@ -156,8 +197,10 @@ namespace SimpleHttpServer
             {
                 if (file.Contains(pageName))
                 {
-                    StreamReader reader = new StreamReader(file);
-                    page = reader.ReadToEnd();
+                    using (StreamReader reader = new StreamReader(file))
+                    {
+                        page = reader.ReadToEnd();
+                    }
                 }
             }
             return page;
